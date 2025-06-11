@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "58838765654",
+    "project_id": "fuelstation-f7e00",
+    "storage_bucket": "fuelstation-f7e00.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:58838765654:android:b9090a29deaf42ebabebf7",
+        "android_client_info": {
+          "package_name": "com.example.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaZwdJrPcdspJI5BZPLBem4kKGAsmIxGU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
