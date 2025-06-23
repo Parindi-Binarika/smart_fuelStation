@@ -1,4 +1,3 @@
-// sign_up_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,6 +25,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'contact': contactController.text.trim(),
         'email': usernameController.text.trim(),
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Signup successful! Please login.")),
+      );
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -40,18 +42,83 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Sign Up")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(controller: nameController, decoration: InputDecoration(labelText: "Name")),
-            TextField(controller: contactController, decoration: InputDecoration(labelText: "Contact")),
-            TextField(controller: usernameController, decoration: InputDecoration(labelText: "Email")),
-            TextField(controller: passwordController, decoration: InputDecoration(labelText: "Password"), obscureText: true),
-            SizedBox(height: 20),
-            ElevatedButton(onPressed: signUp, child: Text("Sign Up")),
-          ],
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: Text("Smart Charging Station Signup"),
+        backgroundColor: Colors.green[700],
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Text("Create Account", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+              SizedBox(height: 20),
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: "Name",
+                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              SizedBox(height: 15),
+              TextField(
+                controller: contactController,
+                decoration: InputDecoration(
+                  labelText: "Contact",
+                  prefixIcon: Icon(Icons.phone),
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              SizedBox(height: 15),
+              TextField(
+                controller: usernameController,
+                decoration: InputDecoration(
+                  labelText: "Email",
+                  prefixIcon: Icon(Icons.email),
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              SizedBox(height: 15),
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: "Password",
+                  prefixIcon: Icon(Icons.lock),
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: signUp,
+                child: Text("Sign Up", style: TextStyle(fontSize: 16)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[700],
+                  padding: EdgeInsets.symmetric(horizontal: 100, vertical: 15),
+                ),
+              ),
+              SizedBox(height: 15),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
+                },
+                child: Text("Already have an account? Login"),
+              ),
+            ],
+          ),
         ),
       ),
     );

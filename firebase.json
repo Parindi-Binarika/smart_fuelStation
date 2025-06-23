@@ -1,1 +1,38 @@
-{"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"fuelstation-f7e00","configurations":{"android":"1:58838765654:android:b9090a29deaf42ebabebf7","ios":"1:58838765654:ios:b73a41cd443474e0abebf7","macos":"1:58838765654:ios:b73a41cd443474e0abebf7","web":"1:58838765654:web:99a3c68d6c021640abebf7","windows":"1:58838765654:web:a64760c4308f844fabebf7"}}},"android":{"default":{"projectId":"fuelstation-f7e00","appId":"1:58838765654:android:b9090a29deaf42ebabebf7","fileOutput":"android/app/google-services.json"}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "fuelstation-f7e00",
+          "configurations": {
+            "android": "1:58838765654:android:b9090a29deaf42ebabebf7",
+            "ios": "1:58838765654:ios:b73a41cd443474e0abebf7",
+            "macos": "1:58838765654:ios:b73a41cd443474e0abebf7",
+            "web": "1:58838765654:web:99a3c68d6c021640abebf7",
+            "windows": "1:58838765654:web:a64760c4308f844fabebf7"
+          }
+        }
+      },
+      "android": {
+        "default": {
+          "projectId": "fuelstation-f7e00",
+          "appId": "1:58838765654:android:b9090a29deaf42ebabebf7",
+          "fileOutput": "android/app/google-services.json"
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}

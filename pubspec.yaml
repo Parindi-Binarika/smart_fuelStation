@@ -1,5 +1,5 @@
 name: app
-description: A Flutter app for smart fuel station with Firebase integration.
+description: A Flutter app for Smart Charging Station with Firebase integration.
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -15,9 +15,12 @@ dependencies:
   firebase_auth: ^4.17.0
   cloud_firestore: ^4.15.0
 
-  # UI + charts
-  fl_chart: ^0.66.2
+  # UI & charts
   cupertino_icons: ^1.0.6
+  fl_chart: ^0.66.2
+
+  # Date & formatting
+  intl: ^0.18.0
 
 dev_dependencies:
   flutter_test:
