@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class EVChartScreen extends StatefulWidget {
+  const EVChartScreen({super.key});
+
   @override
-  _EVChartScreenState createState() => _EVChartScreenState();
+  EVChartScreenState createState() => EVChartScreenState();
 }
 
-class _EVChartScreenState extends State<EVChartScreen> {
+class EVChartScreenState extends State<EVChartScreen> {
   Map<String, int> chartData = {};
   bool isLoading = true;
 
@@ -18,33 +20,45 @@ class _EVChartScreenState extends State<EVChartScreen> {
     fetchChartData();
   }
 
-  void fetchChartData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+  Future<void> fetchChartData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
-    final snapshot = await FirebaseFirestore.instance
-        .collection('orders')
-        .where('userId', isEqualTo: user.uid)
-        .where('type', isEqualTo: 'EV')
-        .get();
+      // Fetch data from Firestore instead of Realtime DB
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('orders')
+          .where('userId', isEqualTo: user.uid)
+          .where('type', isEqualTo: 'EV')
+          .get();
 
-    final Map<String, int> dataMap = {};
-    for (var doc in snapshot.docs) {
-  final data = doc.data() as Map<String, dynamic>;
-  final label = data['package'] ?? 'Unknown';
-  final durationRaw = data['duration'];
-  final int duration = (durationRaw is int)
-      ? durationRaw
-      : int.tryParse(durationRaw.toString()) ?? 0;
+      final Map<String, int> dataMap = {};
+      
+      for (final doc in querySnapshot.docs) {
+        final order = doc.data();
+        final label = order['package'] ?? 'Unknown';
+        final raw = order['duration'];
+        final int duration = (raw is int)
+            ? raw
+            : int.tryParse(raw.toString()) ?? 0;
 
-  dataMap[label] = (dataMap[label] ?? 0) + duration;
-}
+        dataMap[label] = (dataMap[label] ?? 0) + duration;
+      }
 
-
-    setState(() {
-      chartData = dataMap;
-      isLoading = false;
-    });
+      setState(() {
+        chartData = dataMap;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load chart data: $e')),
+        );
+      }
+    }
   }
 
   List<BarChartGroupData> getChartGroups() {
@@ -69,7 +83,10 @@ class _EVChartScreenState extends State<EVChartScreen> {
     if (value.toInt() < keys.length) {
       return SideTitleWidget(
         axisSide: meta.axisSide,
-        child: Text(keys[value.toInt()], style: TextStyle(fontSize: 10)),
+        child: Text(
+          keys[value.toInt()].split(' - ')[0], // Show package name only
+          style: const TextStyle(fontSize: 10),
+        ),
       );
     }
     return Container();
@@ -79,41 +96,51 @@ class _EVChartScreenState extends State<EVChartScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("EV Charging Chart"),
+        title: const Text("EV Charging Chart"),
         backgroundColor: Colors.teal,
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Text("Total Charging Duration per Package (in minutes)",
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  SizedBox(height: 20),
-                  Expanded(
-                    child: BarChart(
-                      BarChartData(
-                        barGroups: getChartGroups(),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: true),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              getTitlesWidget: buildBottomTitles,
+          ? const Center(child: CircularProgressIndicator())
+          : chartData.isEmpty
+              ? const Center(child: Text('No charging data available'))
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "Total Charging Duration per Package (in minutes)",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: BarChart(
+                          BarChartData(
+                            barGroups: getChartGroups(),
+                            titlesData: FlTitlesData(
+                              leftTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: true),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  getTitlesWidget: buildBottomTitles,
+                                ),
+                              ),
+                              topTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              rightTitles: const AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
                             ),
+                            gridData: const FlGridData(show: false),
+                            borderData: FlBorderData(show: false),
                           ),
                         ),
-                        gridData: FlGridData(show: false),
-                        borderData: FlBorderData(show: false),
-                      ),
-                    ),
-                  )
-                ],
-              ),
-            ),
+                      )
+                    ],
+                  ),
+                ),
     );
   }
 }

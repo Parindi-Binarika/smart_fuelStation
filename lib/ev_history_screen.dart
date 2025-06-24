@@ -1,57 +1,81 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:intl/intl.dart';
 import 'ev_chart_screen.dart';
 
 class EVHistoryScreen extends StatefulWidget {
+  const EVHistoryScreen({super.key});
+
   @override
-  _EVHistoryScreenState createState() => _EVHistoryScreenState();
+  EVHistoryScreenState createState() => EVHistoryScreenState();
 }
 
-class _EVHistoryScreenState extends State<EVHistoryScreen> {
+class EVHistoryScreenState extends State<EVHistoryScreen> {
   List<Map<String, dynamic>> evOrders = [];
   bool isLoading = true;
   String sortOption = 'Latest';
+  DatabaseReference? _evOrdersRef;
+  StreamSubscription<DatabaseEvent>? _evOrdersSubscription;
 
   @override
   void initState() {
     super.initState();
     fetchEVOrders();
+    // Remove syncRealtimeToFirestore as it's causing conflicts
+  }
+
+  @override
+  void dispose() {
+    _evOrdersSubscription?.cancel();
+    super.dispose();
   }
 
   void fetchEVOrders() async {
     try {
       final String? userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId == null) throw Exception('User is not logged in.');
+      if (userId == null) throw Exception('User not logged in');
 
-      bool isDescending = sortOption == 'Latest';
-
-      QuerySnapshot snapshot = await FirebaseFirestore.instance
+      final querySnapshot = await FirebaseFirestore.instance
           .collection('orders')
           .where('userId', isEqualTo: userId)
           .where('type', isEqualTo: 'EV')
-          .orderBy('timestamp', descending: isDescending)
           .get();
 
-      final List<Map<String, dynamic>> loadedOrders = snapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
+      final List<Map<String, dynamic>> loadedOrders = querySnapshot.docs.map((doc) {
+        final data = doc.data();
         return {
+          'id': doc.id,
           'package': data['package'] ?? 'N/A',
           'status': data['status'] ?? 'N/A',
-          'timestamp': (data['timestamp'] as Timestamp).toDate(),
+          'price': data['price'] ?? 'N/A',
+          'duration': data['duration'] ?? 0,
+          'timestamp': (data['timestamp'] is Timestamp)
+              ? (data['timestamp'] as Timestamp).toDate()
+              : DateTime.tryParse(data['timestamp']?.toString() ?? '') ?? DateTime.now(),
         };
       }).toList();
 
-      setState(() {
-        evOrders = loadedOrders;
-        isLoading = false;
-      });
+      loadedOrders.sort((a, b) => sortOption == 'Latest'
+          ? b['timestamp'].compareTo(a['timestamp'])
+          : a['timestamp'].compareTo(b['timestamp']));
+
+      if (mounted) {
+        setState(() {
+          evOrders = loadedOrders;
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error loading EV orders: $e")),
-      );
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to load EV history: $e")),
+        );
+      }
     }
   }
 
@@ -63,14 +87,14 @@ class _EVHistoryScreenState extends State<EVHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('EV Charging History'),
+        title: const Text('EV Charging History'),
         backgroundColor: Colors.teal,
         actions: [
           DropdownButton<String>(
             value: sortOption,
-            underline: SizedBox(),
+            underline: const SizedBox(),
             dropdownColor: Colors.teal[50],
-            icon: Icon(Icons.sort, color: Colors.white),
+            icon: const Icon(Icons.sort, color: Colors.white),
             onChanged: (value) {
               if (value != null) {
                 setState(() {
@@ -90,9 +114,9 @@ class _EVHistoryScreenState extends State<EVHistoryScreen> {
         ],
       ),
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : evOrders.isEmpty
-              ? Center(child: Text('No EV charging history found.'))
+              ? const Center(child: Text('No EV charging history found.'))
               : Column(
                   children: [
                     Expanded(
@@ -101,21 +125,23 @@ class _EVHistoryScreenState extends State<EVHistoryScreen> {
                         itemBuilder: (context, index) {
                           final order = evOrders[index];
                           return Card(
-                            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             elevation: 3,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: ListTile(
-                              leading: Icon(Icons.ev_station, color: Colors.teal),
+                              leading: const Icon(Icons.ev_station, color: Colors.teal),
                               title: Text(order['package'],
-                                  style: TextStyle(fontWeight: FontWeight.bold)),
+                                  style: const TextStyle(fontWeight: FontWeight.bold)),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  SizedBox(height: 4),
+                                  const SizedBox(height: 4),
                                   Text("Status: ${order['status']}"),
-                                  SizedBox(height: 2),
+                                  Text("Price: ${order['price']}"),
+                                  Text("Duration: ${order['duration']} mins"),
+                                  const SizedBox(height: 2),
                                   Text("Date: ${formatDate(order['timestamp'])}"),
                                 ],
                               ),
@@ -130,15 +156,15 @@ class _EVHistoryScreenState extends State<EVHistoryScreen> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => EVChartScreen()),
+                            MaterialPageRoute(builder: (_) => const EVChartScreen()),
                           );
                         },
-                        icon: Icon(Icons.bar_chart),
-                        label: Text('Chart View'),
+                        icon: const Icon(Icons.bar_chart),
+                        label: const Text('Chart View'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.teal[700],
                           foregroundColor: Colors.white,
-                          minimumSize: Size(double.infinity, 48),
+                          minimumSize: const Size(double.infinity, 48),
                         ),
                       ),
                     ),
