@@ -1,3 +1,4 @@
+import 'package:app/port_availability_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -32,6 +33,7 @@ class ChargingService {
         'id': orderId,
         'packageName': packageName,
         'portType': portType,
+        
         'portId': portId,
         'status': 'Active',
         'startTime': DateTime.now().toIso8601String(),
@@ -124,33 +126,44 @@ class ChargingService {
       final dbRef = FirebaseDatabase.instance.ref().child('orders').push();
       final orderId = dbRef.key!;
       final duration = 1; // Always 1 minute for development
+
+      // Detect type based on portType or package
+      String type = portType == PortAvailabilityService.EV_PORT ? 'EV' : 'Mobile';
+
       final orderData = {
         'userId': userId,
-        'package': package['name'],
-        'price': package['price'],
+        'package': package['name'] ?? '',
+        'price': package['price'] ?? 0,
         'duration': duration,
         'portId': portId,
         'portType': portType,
+        'type': type,
         'status': 'Charging Started',
         'timestamp': DateTime.now().toIso8601String(),
-      };
+};
       await dbRef.set(orderData);
 
-      // 2. Create order in Firestore (to get docId for later update)
-      final docRef = await FirebaseFirestore.instance.collection('orders').add({
-        ...orderData,
-        'status': 'Charging Started',
-        'timestamp': Timestamp.now(),
-      });
+// 2. Create order in Firestore (to get docId for later update)
+late DocumentReference docRef;
+try {
+  docRef = await FirebaseFirestore.instance.collection('orders').add({
+    ...orderData,
+    'timestamp': Timestamp.now(),
+  });
+} catch (e, stack) {
+  print('Firestore error: $e');
+  print(stack);
+  rethrow;
+}
 
-      // 3. Start countdown on dashboard
-      chargingWidgetKey?.currentState?.startCharging(
-        orderId: orderId,
-        firestoreId: docRef.id,
-        packageName: package['name'],
-        portId: portId,
-        durationMinutes: duration, // Always 1 minute
-      );
+// 3. Start countdown on dashboard
+chargingWidgetKey?.currentState?.startCharging(
+  orderId: orderId,
+  firestoreId: docRef.id,
+  packageName: package['name'],
+  portId: portId,
+  durationMinutes: duration, // Always 1 minute
+);
 
       return {'orderId': orderId, 'firestoreId': docRef.id};
     } catch (e) {
