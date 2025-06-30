@@ -25,7 +25,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final String? currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
   // Add a GlobalKey to control the charging widget
-  final GlobalKey<DashboardChargingWidgetState> _chargingWidgetKey = GlobalKey();
+  final GlobalKey<DashboardChargingWidgetState> chargingWidgetKey = GlobalKey();
 
   @override
   void initState() {
@@ -35,11 +35,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   List<Widget> get _pages => [
-    _DashboardHomeScreen(chargingWidgetKey: _chargingWidgetKey),
+    _DashboardHomeScreen(chargingWidgetKey: chargingWidgetKey),
     const PackagesScreen(),
     const HistoryScreen(),
     const ChartViewScreen(),
-    EVPackageScreen(),
+    const EVPackageScreen(),
     const EVHistoryScreen(),
     const EVChartScreen(),
   ];
@@ -66,15 +66,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
           // Show current charging status in app bar if user has active session
           if (currentUserId != null)
             StreamBuilder<DocumentSnapshot?>(
-              stream: Stream.fromFuture(PortAvailabilityService.getUserActiveSession(currentUserId!))
-                  .asyncExpand((session) => session != null 
-                      ? Stream.periodic(const Duration(seconds: 5), (_) => PortAvailabilityService.getUserActiveSession(currentUserId!)).asyncMap((future) => future)
-                      : Stream.value(null)),
+              stream: Stream.fromFuture(
+                PortAvailabilityService.getUserActiveSession(currentUserId!),
+              ).asyncExpand(
+                (session) =>
+                    session != null
+                        ? Stream.periodic(
+                          const Duration(seconds: 5),
+                          (_) => PortAvailabilityService.getUserActiveSession(
+                            currentUserId!,
+                          ),
+                        ).asyncMap((future) => future)
+                        : Stream.value(null),
+              ),
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data != null) {
                   return Container(
                     margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange,
                       borderRadius: BorderRadius.circular(12),
@@ -110,9 +122,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.teal[800],
-              ),
+              decoration: BoxDecoration(color: Colors.teal[800]),
               child: const Text(
                 'Smart Charging Station',
                 style: TextStyle(
@@ -122,11 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ),
-            _drawerItem(
-              icon: Icons.dashboard,
-              text: 'Dashboard',
-              index: 0,
-            ),
+            _drawerItem(icon: Icons.dashboard, text: 'Dashboard', index: 0),
             const Divider(),
             _drawerItem(
               icon: Icons.bolt,
@@ -164,22 +170,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Column(
         children: [
-          // Show countdown if charging
-          DashboardChargingWidget(
-            key: _chargingWidgetKey,
-            onChargingComplete: () {
-              setState(() {});
-            },
-          ),
+          DashboardChargingWidget(key: chargingWidgetKey),
           Expanded(child: _pages[_selectedIndex]),
         ],
       ),
     );
   }
 
-  Widget _drawerItem({required IconData icon, required String text, required int index}) {
+  Widget _drawerItem({
+    required IconData icon,
+    required String text,
+    required int index,
+  }) {
     return ListTile(
-      leading: Icon(icon, color: _selectedIndex == index ? Colors.teal[800] : null),
+      leading: Icon(
+        icon,
+        color: _selectedIndex == index ? Colors.teal[800] : null,
+      ),
       title: Text(text),
       selected: _selectedIndex == index,
       onTap: () {
@@ -195,7 +202,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _DashboardHomeScreen extends StatelessWidget {
   final GlobalKey<DashboardChargingWidgetState> chargingWidgetKey;
 
-  const _DashboardHomeScreen({Key? key, required this.chargingWidgetKey}) : super(key: key);
+  const _DashboardHomeScreen({super.key, required this.chargingWidgetKey});
 
   @override
   Widget build(BuildContext context) {
@@ -240,9 +247,9 @@ class _DashboardHomeScreen extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Port availability section
           const Text(
             'Port Availability',
@@ -253,32 +260,34 @@ class _DashboardHomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           const PortStatusWidget(
             portType: PortAvailabilityService.MOBILE_PORT,
             displayName: 'Mobile Charging Ports',
           ),
-          
+
           const PortStatusWidget(
             portType: PortAvailabilityService.EV_PORT,
             displayName: 'EV Charging Ports',
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Current session section
           if (currentUserId != null)
             FutureBuilder<DocumentSnapshot?>(
-              future: PortAvailabilityService.getUserActiveSession(currentUserId),
+              future: PortAvailabilityService.getUserActiveSession(
+                currentUserId,
+              ),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                
+
                 if (snapshot.hasData && snapshot.data != null) {
                   final session = snapshot.data!;
                   final sessionData = session.data() as Map<String, dynamic>;
-                  
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -305,7 +314,8 @@ class _DashboardHomeScreen extends StatelessWidget {
                             Row(
                               children: [
                                 Icon(
-                                  sessionData['portType'] == PortAvailabilityService.MOBILE_PORT
+                                  sessionData['portType'] ==
+                                          PortAvailabilityService.MOBILE_PORT
                                       ? Icons.smartphone
                                       : Icons.electric_car,
                                   color: Colors.orange,
@@ -314,7 +324,8 @@ class _DashboardHomeScreen extends StatelessWidget {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Port: ${sessionData['portId']}',
@@ -335,7 +346,10 @@ class _DashboardHomeScreen extends StatelessWidget {
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.orange,
                                     borderRadius: BorderRadius.circular(20),
@@ -356,35 +370,48 @@ class _DashboardHomeScreen extends StatelessWidget {
                               onPressed: () async {
                                 final confirmed = await showDialog<bool>(
                                   context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Stop Charging'),
-                                    content: const Text('Are you sure you want to stop the current charging session?'),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () => Navigator.pop(context, false),
-                                        child: const Text('Cancel'),
-                                      ),
-                                      ElevatedButton(
-                                        onPressed: () => Navigator.pop(context, true),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
+                                  builder:
+                                      (context) => AlertDialog(
+                                        title: const Text('Stop Charging'),
+                                        content: const Text(
+                                          'Are you sure you want to stop the current charging session?',
                                         ),
-                                        child: const Text('Stop Charging'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.pop(
+                                                  context,
+                                                  false,
+                                                ),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed:
+                                                () => Navigator.pop(
+                                                  context,
+                                                  true,
+                                                ),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red,
+                                            ),
+                                            child: const Text('Stop Charging'),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
                                 );
-                                
+
                                 if (confirmed == true) {
                                   await PortAvailabilityService.releasePort(
                                     sessionData['portId'],
                                     currentUserId,
                                   );
-                                  
+
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
-                                        content: Text('Charging session stopped successfully'),
+                                        content: Text(
+                                          'Charging session stopped successfully',
+                                        ),
                                         backgroundColor: Colors.green,
                                       ),
                                     );
@@ -403,13 +430,13 @@ class _DashboardHomeScreen extends StatelessWidget {
                     ],
                   );
                 }
-                
+
                 return const SizedBox.shrink();
               },
             ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Quick actions
           const Text(
             'Quick Actions',
@@ -420,7 +447,7 @@ class _DashboardHomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           Row(
             children: [
               Expanded(
@@ -432,9 +459,10 @@ class _DashboardHomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => PackagesScreen(
-                          chargingWidgetKey: chargingWidgetKey,
-                        ),
+                        builder:
+                            (context) => PackagesScreen(
+                              chargingWidgetKey: chargingWidgetKey,
+                            ),
                       ),
                     );
                   },
@@ -450,9 +478,10 @@ class _DashboardHomeScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => EVPackageScreen(
-                          chargingWidgetKey: chargingWidgetKey,
-                        ),
+                        builder:
+                            (context) => EVPackageScreen(
+                              chargingWidgetKey: chargingWidgetKey,
+                            ),
                       ),
                     );
                   },
@@ -498,11 +527,7 @@ class _QuickActionCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: Colors.teal[800],
-            ),
+            Icon(icon, size: 40, color: Colors.teal[800]),
             const SizedBox(height: 8),
             Text(
               title,
@@ -516,10 +541,7 @@ class _QuickActionCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               textAlign: TextAlign.center,
             ),
           ],

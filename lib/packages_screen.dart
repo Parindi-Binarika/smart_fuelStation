@@ -285,9 +285,9 @@ class _PackagesScreenState extends State<PackagesScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'Mobile Charging Ports',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -484,7 +484,7 @@ class _PackageCard extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Row(
                       children: [
-                        Icon(Icons.check_circle, color: Colors.green, size: 16),
+                        const Icon(Icons.check_circle, color: Colors.green, size: 16),
                         const SizedBox(width: 8),
                         Text(
                           feature,
@@ -515,7 +515,7 @@ class _PackageCard extends StatelessWidget {
                   future:
                       currentUserId != null
                           ? PortAvailabilityService.hasActiveSession(
-                            currentUserId!,
+                            currentUserId,
                           )
                           : Future.value(false),
                   builder: (context, activeSessionSnapshot) {

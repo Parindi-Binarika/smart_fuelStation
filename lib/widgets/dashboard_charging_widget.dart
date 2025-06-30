@@ -7,11 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 // This widget should be placed at the top of your dashboard
 class DashboardChargingWidget extends StatefulWidget {
   final VoidCallback? onChargingComplete;
-  
-  const DashboardChargingWidget({
-    super.key,
-    this.onChargingComplete,
-  });
+
+  const DashboardChargingWidget({super.key, this.onChargingComplete});
 
   @override
   DashboardChargingWidgetState createState() => DashboardChargingWidgetState();
@@ -69,10 +66,10 @@ class DashboardChargingWidgetState extends State<DashboardChargingWidget> {
 
       // Update Realtime Database
       if (currentOrderId != null) {
-        final dbRef = FirebaseDatabase.instance
-            .ref()
-            .child('orders/${user.uid}/$currentOrderId');
-        
+        final dbRef = FirebaseDatabase.instance.ref().child(
+          'orders/${user.uid}/$currentOrderId',
+        );
+
         await dbRef.update({
           'status': 'Completed',
           'completedAt': DateTime.now().toIso8601String(),
@@ -84,10 +81,7 @@ class DashboardChargingWidgetState extends State<DashboardChargingWidget> {
         await FirebaseFirestore.instance
             .collection('orders')
             .doc(currentFirestoreId!)
-            .update({
-          'status': 'Completed',
-          'completedAt': Timestamp.now(),
-        });
+            .update({'status': 'Completed', 'completedAt': Timestamp.now()});
       }
 
       // Release the charging port
@@ -112,9 +106,9 @@ class DashboardChargingWidgetState extends State<DashboardChargingWidget> {
     } catch (e) {
       print("Error completing charging: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating status: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error updating status: $e')));
       }
     }
   }
@@ -126,19 +120,20 @@ class DashboardChargingWidgetState extends State<DashboardChargingWidget> {
           .collection('charging_ports')
           .doc(portId)
           .update({
-        'isAvailable': true,
-        'currentUserId': null,
-        'currentPackage': null,
-        'sessionStartTime': null,
-      });
+            'isAvailable': true,
+            'currentUserId': null,
+            'currentPackage': null,
+            'sessionStartTime': null,
+          });
 
       // Update charging session
-      final sessionsQuery = await FirebaseFirestore.instance
-          .collection('charging_sessions')
-          .where('portId', isEqualTo: portId)
-          .where('userId', isEqualTo: userId)
-          .where('status', isEqualTo: 'active')
-          .get();
+      final sessionsQuery =
+          await FirebaseFirestore.instance
+              .collection('charging_sessions')
+              .where('portId', isEqualTo: portId)
+              .where('userId', isEqualTo: userId)
+              .where('status', isEqualTo: 'active')
+              .get();
 
       for (final doc in sessionsQuery.docs) {
         await doc.reference.update({
@@ -159,7 +154,9 @@ class DashboardChargingWidgetState extends State<DashboardChargingWidget> {
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 8),
-            Text('Charging Complete! ${currentPackageName ?? "Package"} finished.'),
+            Text(
+              'Charging Complete! ${currentPackageName ?? "Package"} finished.',
+            ),
           ],
         ),
         backgroundColor: Colors.green,
@@ -200,11 +197,7 @@ class DashboardChargingWidgetState extends State<DashboardChargingWidget> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.ev_station,
-                color: Colors.white,
-                size: 24,
-              ),
+              const Icon(Icons.ev_station, color: Colors.white, size: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -241,19 +234,18 @@ class DashboardChargingWidgetState extends State<DashboardChargingWidget> {
           ),
           const SizedBox(height: 12),
           LinearProgressIndicator(
-            value: remainingSeconds > 0 
-                ? (60 - remainingSeconds) / 60 // Assuming 1 minute for development
-                : 1.0,
+            value:
+                remainingSeconds > 0
+                    ? (60 - remainingSeconds) /
+                        60 // Assuming 1 minute for development
+                    : 1.0,
             backgroundColor: Colors.white24,
             valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
           ),
           const SizedBox(height: 8),
           Text(
             '${remainingSeconds > 0 ? ((60 - remainingSeconds) / 60 * 100).toInt() : 100}% Complete',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
       ),

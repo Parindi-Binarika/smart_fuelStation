@@ -116,7 +116,11 @@ class _EVPackageScreenState extends State<EVPackageScreen> {
         if (result == null) {
           _showErrorDialog('Failed to start charging. Please try again.');
         } else {
+          final firestoreId =
+              result['firestoreId']; // <-- Fetch Firestore ID here
+          // You can now use firestoreId as needed, e.g., pass to another screen or store it
           _showSuccessDialog(package, portId);
+          // Example: print('Firestore Order ID: $firestoreId');
         }
         return;
       } else {
@@ -194,11 +198,14 @@ class _EVPackageScreenState extends State<EVPackageScreen> {
             ),
             actions: [
               ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Go back to dashboard
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal[800],
                 ),
-                child: const Text('OK'),
+                child: const Text('Back to Dashboard'),
               ),
             ],
           ),

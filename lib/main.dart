@@ -8,18 +8,25 @@ import 'firebase_options.dart';
 import 'login_screen.dart';
 import 'sign_up_screen.dart';
 import 'dashboard_screen.dart';
+import 'port_availability_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Manually set the Realtime Database URL
-  FirebaseDatabase.instance.databaseURL = 'https://fuelstation-f7e00-default-rtdb.firebaseio.com/';
+  FirebaseDatabase.instance.databaseURL =
+      'https://fuelstation-f7e00-default-rtdb.firebaseio.com/';
 
   // Optionally enable offline persistence for mobile
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
     FirebaseDatabase.instance.setPersistenceEnabled(true);
   }
+
+  // Initialize ports 
+  await PortAvailabilityService.initializePorts();
+  // or to force reset:
+  // await PortAvailabilityService.forceInitializePorts();
 
   runApp(const SmartChargingApp());
 }
@@ -36,9 +43,9 @@ class SmartChargingApp extends StatelessWidget {
         primarySwatch: Colors.teal,
         scaffoldBackgroundColor: Colors.grey[100],
         textTheme: Theme.of(context).textTheme.apply(
-              bodyColor: Colors.teal[900],
-              displayColor: Colors.teal[800],
-            ),
+          bodyColor: Colors.teal[900],
+          displayColor: Colors.teal[800],
+        ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.teal[600],
@@ -58,7 +65,7 @@ class SmartChargingApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
-        '/dashboard': (context) =>  DashboardScreen(),
+        '/dashboard': (context) => const DashboardScreen(),
       },
     );
   }

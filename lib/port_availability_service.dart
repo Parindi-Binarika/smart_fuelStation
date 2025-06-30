@@ -13,39 +13,38 @@ class PortAvailabilityService {
   static Future<void> initializePorts() async {
     try {
       final portsRef = _firestore.collection(_portsCollection);
-      
-      // Check for specific ports instead of just any documents
-      final mobilePortDoc = await portsRef.doc('mobile_port_1').get();
-      final evPortDoc = await portsRef.doc('ev_port_1').get();
 
-      // Create mobile charging port if it doesn't exist
-      if (!mobilePortDoc.exists) {
-        await portsRef.doc('mobile_port_1').set({
+      // Define all port configs
+      final ports = [
+        {
           'id': 'mobile_port_1',
           'type': MOBILE_PORT,
           'name': 'Mobile Charging Port 1',
-          'isAvailable': true,
-          'currentUserId': null,
-          'currentPackage': null,
-          'sessionStartTime': null,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        print('Created mobile_port_1');
-      }
+        },
+        {
+          'id': 'mobile_port_2',
+          'type': MOBILE_PORT,
+          'name': 'Mobile Charging Port 2',
+        },
+        {'id': 'ev_port_1', 'type': EV_PORT, 'name': 'EV Charging Port 1'},
+        {'id': 'ev_port_2', 'type': EV_PORT, 'name': 'EV Charging Port 2'},
+      ];
 
-      // Create EV charging port if it doesn't exist
-      if (!evPortDoc.exists) {
-        await portsRef.doc('ev_port_1').set({
-          'id': 'ev_port_1',
-          'type': EV_PORT,
-          'name': 'EV Charging Port 1',
-          'isAvailable': true,
-          'currentUserId': null,
-          'currentPackage': null,
-          'sessionStartTime': null,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        print('Created ev_port_1');
+      for (final port in ports) {
+        final doc = await portsRef.doc(port['id']!).get();
+        if (!doc.exists) {
+          await portsRef.doc(port['id']!).set({
+            'id': port['id'],
+            'type': port['type'],
+            'name': port['name'],
+            'isAvailable': true,
+            'currentUserId': null,
+            'currentPackage': null,
+            'sessionStartTime': null,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+          print('Created ${port['id']}');
+        }
       }
 
       print('Port initialization completed successfully');
@@ -59,30 +58,35 @@ class PortAvailabilityService {
   static Future<void> forceInitializePorts() async {
     try {
       final portsRef = _firestore.collection(_portsCollection);
-      
-      // Create/Update mobile charging port
-      await portsRef.doc('mobile_port_1').set({
-        'id': 'mobile_port_1',
-        'type': MOBILE_PORT,
-        'name': 'Mobile Charging Port 1',
-        'isAvailable': true,
-        'currentUserId': null,
-        'currentPackage': null,
-        'sessionStartTime': null,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
 
-      // Create/Update EV charging port
-      await portsRef.doc('ev_port_1').set({
-        'id': 'ev_port_1',
-        'type': EV_PORT,
-        'name': 'EV Charging Port 1',
-        'isAvailable': true,
-        'currentUserId': null,
-        'currentPackage': null,
-        'sessionStartTime': null,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      final ports = [
+        {
+          'id': 'mobile_port_1',
+          'type': MOBILE_PORT,
+          'name': 'Mobile Charging Port 1',
+        },
+        {
+          'id': 'mobile_port_2',
+          'type': MOBILE_PORT,
+          'name': 'Mobile Charging Port 2',
+        },
+        {'id': 'ev_port_1', 'type': EV_PORT, 'name': 'EV Charging Port 1'},
+        {'id': 'ev_port_2', 'type': EV_PORT, 'name': 'EV Charging Port 2'},
+      ];
+
+      for (final port in ports) {
+        await portsRef.doc(port['id']!).set({
+          'id': port['id'],
+          'type': port['type'],
+          'name': port['name'],
+          'isAvailable': true,
+          'currentUserId': null,
+          'currentPackage': null,
+          'sessionStartTime': null,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        print('Force created ${port['id']}');
+      }
 
       print('Ports force initialized successfully');
     } catch (e) {
@@ -107,12 +111,13 @@ class PortAvailabilityService {
   // Check if any port of specific type is available
   static Future<bool> isPortTypeAvailable(String portType) async {
     try {
-      final snapshot = await _firestore
-          .collection(_portsCollection)
-          .where('type', isEqualTo: portType)
-          .where('isAvailable', isEqualTo: true)
-          .get();
-      
+      final snapshot =
+          await _firestore
+              .collection(_portsCollection)
+              .where('type', isEqualTo: portType)
+              .where('isAvailable', isEqualTo: true)
+              .get();
+
       return snapshot.docs.isNotEmpty;
     } catch (e) {
       print('Error checking port availability: $e');
@@ -123,13 +128,14 @@ class PortAvailabilityService {
   // Get available port of specific type
   static Future<DocumentSnapshot?> getAvailablePort(String portType) async {
     try {
-      final snapshot = await _firestore
-          .collection(_portsCollection)
-          .where('type', isEqualTo: portType)
-          .where('isAvailable', isEqualTo: true)
-          .limit(1)
-          .get();
-      
+      final snapshot =
+          await _firestore
+              .collection(_portsCollection)
+              .where('type', isEqualTo: portType)
+              .where('isAvailable', isEqualTo: true)
+              .limit(1)
+              .get();
+
       return snapshot.docs.isNotEmpty ? snapshot.docs.first : null;
     } catch (e) {
       print('Error getting available port: $e');
@@ -138,7 +144,11 @@ class PortAvailabilityService {
   }
 
   // Reserve a port for charging
-  static Future<String?> reservePort(String portType, String userId, String packageName) async {
+  static Future<String?> reservePort(
+    String portType,
+    String userId,
+    String packageName,
+  ) async {
     try {
       final availablePort = await getAvailablePort(portType);
       if (availablePort == null) {
@@ -147,12 +157,15 @@ class PortAvailabilityService {
       }
 
       // Update port status
-      await _firestore.collection(_portsCollection).doc(availablePort.id).update({
-        'isAvailable': false,
-        'currentUserId': userId,
-        'currentPackage': packageName,
-        'sessionStartTime': FieldValue.serverTimestamp(),
-      });
+      await _firestore
+          .collection(_portsCollection)
+          .doc(availablePort.id)
+          .update({
+            'isAvailable': false,
+            'currentUserId': userId,
+            'currentPackage': packageName,
+            'sessionStartTime': FieldValue.serverTimestamp(),
+          });
 
       // Create charging session record
       await _firestore.collection(_sessionsCollection).add({
@@ -186,12 +199,13 @@ class PortAvailabilityService {
       });
 
       // Update charging session
-      final sessionsQuery = await _firestore
-          .collection(_sessionsCollection)
-          .where('portId', isEqualTo: portId)
-          .where('userId', isEqualTo: userId)
-          .where('status', isEqualTo: 'active')
-          .get();
+      final sessionsQuery =
+          await _firestore
+              .collection(_sessionsCollection)
+              .where('portId', isEqualTo: portId)
+              .where('userId', isEqualTo: userId)
+              .where('status', isEqualTo: 'active')
+              .get();
 
       for (final doc in sessionsQuery.docs) {
         await doc.reference.update({
@@ -212,13 +226,14 @@ class PortAvailabilityService {
   // Get user's current active session
   static Future<DocumentSnapshot?> getUserActiveSession(String userId) async {
     try {
-      final snapshot = await _firestore
-          .collection(_sessionsCollection)
-          .where('userId', isEqualTo: userId)
-          .where('status', isEqualTo: 'active')
-          .limit(1)
-          .get();
-      
+      final snapshot =
+          await _firestore
+              .collection(_sessionsCollection)
+              .where('userId', isEqualTo: userId)
+              .where('status', isEqualTo: 'active')
+              .limit(1)
+              .get();
+
       return snapshot.docs.isNotEmpty ? snapshot.docs.first : null;
     } catch (e) {
       print('Error getting user active session: $e');
@@ -240,7 +255,8 @@ class PortAvailabilityService {
   // Get port details by ID
   static Future<DocumentSnapshot?> getPortById(String portId) async {
     try {
-      final doc = await _firestore.collection(_portsCollection).doc(portId).get();
+      final doc =
+          await _firestore.collection(_portsCollection).doc(portId).get();
       return doc.exists ? doc : null;
     } catch (e) {
       print('Error getting port: $e');
@@ -261,19 +277,19 @@ class PortAvailabilityService {
   static Future<void> debugFirestoreConnection() async {
     try {
       print('Testing Firestore connection...');
-      
+
       // Test basic connection
-      final testDoc = await _firestore.collection(_portsCollection).limit(1).get();
+      final testDoc =
+          await _firestore.collection(_portsCollection).limit(1).get();
       print('Firestore connection successful');
       print('Documents in ports collection: ${testDoc.docs.length}');
-      
+
       // List all documents in ports collection
       final allPorts = await _firestore.collection(_portsCollection).get();
       print('All ports in collection:');
       for (var doc in allPorts.docs) {
         print('- Doc ID: ${doc.id}, Data: ${doc.data()}');
       }
-      
     } catch (e) {
       print('Firestore connection error: $e');
     }
