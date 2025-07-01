@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
+// import 'package:firebase_database/firebase_database.dart'; // Remove this line
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // This widget should be placed at the top of your dashboard
@@ -64,17 +64,7 @@ class DashboardChargingWidgetState extends State<DashboardChargingWidget> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
-      // Update Realtime Database
-      if (currentOrderId != null) {
-        final dbRef = FirebaseDatabase.instance.ref().child(
-          'orders/${user.uid}/$currentOrderId',
-        );
-
-        await dbRef.update({
-          'status': 'Completed',
-          'completedAt': DateTime.now().toIso8601String(),
-        });
-      }
+      // Remove Realtime Database update
 
       // Update Firestore order
       if (currentFirestoreId != null) {

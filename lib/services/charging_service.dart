@@ -1,14 +1,12 @@
 import 'package:app/port_availability_service.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/dashboard_charging_widget.dart';
 
 // Service class to handle package selection and charging initiation
 class ChargingService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  static final FirebaseDatabase _database = FirebaseDatabase.instance;
 
   static Future<Map<String, String>?> selectPackageAndStartCharging({
     required String packageName,
@@ -29,37 +27,21 @@ class ChargingService {
         throw Exception('No available charging ports');
       }
 
-      // Create order in Realtime Database
-      final orderId = DateTime.now().millisecondsSinceEpoch.toString();
-      final dbRef = _database.ref().child('orders/${user.uid}/$orderId');
-
-      await dbRef.set({
-        'id': orderId,
-        'packageName': packageName,
-        'portType': portType,
-
-        'portId': portId,
-        'status': 'Active',
-        'startTime': DateTime.now().toIso8601String(),
-        'durationMinutes': 1, // Development: 1 minute
-      });
-
       // Create order in Firestore
       final firestoreDoc = await _firestore.collection('orders').add({
         'userId': user.uid,
-        'orderId': orderId,
         'packageName': packageName,
         'portType': portType,
         'portId': portId,
         'status': 'Active',
-        'startTime': Timestamp.now(),
+        'startTime': FieldValue.serverTimestamp(),
         'durationMinutes': 1, // Development: 1 minute
-        'createdAt': Timestamp.now(),
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
       // Start charging countdown
       chargingWidgetKey.currentState?.startCharging(
-        orderId: orderId,
+        orderId: firestoreDoc.id,
         firestoreId: firestoreDoc.id,
         packageName: packageName,
         portId: portId,
@@ -67,7 +49,7 @@ class ChargingService {
       );
 
       return {
-        'orderId': orderId,
+        'orderId': firestoreDoc.id,
         'firestoreId': firestoreDoc.id,
         'portId': portId,
       };
@@ -134,9 +116,6 @@ class ChargingService {
     required GlobalKey<DashboardChargingWidgetState>? chargingWidgetKey,
   }) async {
     try {
-      // 1. Create order in Realtime Database
-      final dbRef = FirebaseDatabase.instance.ref().child('orders').push();
-      final orderId = dbRef.key!;
       const duration = 1; // Always 1 minute for development
 
       String type =
@@ -151,28 +130,25 @@ class ChargingService {
         'portType': portType,
         'type': type,
         'status': 'Charging Started',
-        'timestamp': DateTime.now().toIso8601String(),
+        'timestamp': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
       };
 
-      // Set data in Realtime Database
-      await dbRef.set(orderData);
+      // Create order in Firestore
+      final docRef = await FirebaseFirestore.instance
+          .collection('orders')
+          .add(orderData);
 
-      // 2. Create order in Firestore
-      final docRef = await FirebaseFirestore.instance.collection('orders').add({
-        ...orderData,
-        'timestamp': Timestamp.now(),
-      });
-
-      // 3. Start countdown on dashboard if widget key is valid
+      // Start countdown on dashboard if widget key is valid
       chargingWidgetKey?.currentState?.startCharging(
-        orderId: orderId,
+        orderId: docRef.id,
         firestoreId: docRef.id,
         packageName: package['name'],
         portId: portId,
         durationMinutes: duration,
       );
 
-      return {'orderId': orderId, 'firestoreId': docRef.id};
+      return {'orderId': docRef.id, 'firestoreId': docRef.id};
     } catch (e, stack) {
       print('Error in createOrderAndStartCharging: $e');
       print(stack);

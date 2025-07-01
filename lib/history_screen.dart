@@ -126,7 +126,7 @@ class HistoryScreenState extends State<HistoryScreen> {
                         decoration: BoxDecoration(
                           color: Colors.teal[50],
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.teal.withOpacity(0.3)),
+                          border: Border.all(color: Colors.teal.withAlpha((0.3 * 255).toInt())),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,

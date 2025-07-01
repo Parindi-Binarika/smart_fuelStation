@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 import 'firebase_options.dart';
@@ -14,19 +15,22 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Manually set the Realtime Database URL
+  // Configure Realtime Database
   FirebaseDatabase.instance.databaseURL =
       'https://fuelstation-f7e00-default-rtdb.firebaseio.com/';
 
-  // Optionally enable offline persistence for mobile
   if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
     FirebaseDatabase.instance.setPersistenceEnabled(true);
   }
 
-  // Initialize ports 
-  await PortAvailabilityService.initializePorts();
-  // or to force reset:
-  // await PortAvailabilityService.forceInitializePorts();
+  // Initialize ports only if no user is logged in (first run)
+  if (FirebaseAuth.instance.currentUser == null) {
+    try {
+      await PortAvailabilityService.initializePorts();
+    } catch (e) {
+      debugPrint('Port initialization error: $e');
+    }
+  }
 
   runApp(const SmartChargingApp());
 }
@@ -60,8 +64,23 @@ class SmartChargingApp extends StatelessWidget {
             ),
           ),
         ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.grey[50],
+        ),
       ),
-      home: const WelcomeScreen(),
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return snapshot.hasData ? const DashboardScreen() : const WelcomeScreen();
+        },
+      ),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
@@ -91,20 +110,30 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 'Welcome to Smart Charging Station',
-                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Colors.teal[800],
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 30),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.login),
-                label: const Text('Login'),
+              SizedBox(
+                width: 200,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.login),
+                  label: const Text('Login'),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/login');
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
                 onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/login');
+                  Navigator.pushNamed(context, '/signup');
                 },
+                child: const Text('Create New Account'),
               ),
             ],
           ),

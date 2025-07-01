@@ -18,27 +18,32 @@ class PortStatusWidget extends StatelessWidget {
       stream: PortAvailabilityService.getPortsByTypeStream(portType),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
+          return Center(
+            child: Text(
+              'Error: ${snapshot.error}',
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Text('No $displayName ports found');
+          return Center(child: Text('No $displayName ports found'));
         }
 
         final ports = snapshot.data!.docs;
-        final availablePorts =
-            ports.where((port) => port['isAvailable'] == true).length;
+        final availablePorts = ports.where((port) => 
+          port['isAvailable'] == true).length;
         final totalPorts = ports.length;
 
         return Container(
           padding: const EdgeInsets.all(16),
           margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -51,8 +56,8 @@ class PortStatusWidget extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                portType == PortAvailabilityService.MOBILE_PORT
-                    ? Icons.smartphone
+                portType == PortAvailabilityService.MOBILE_PORT 
+                    ? Icons.smartphone 
                     : Icons.electric_car,
                 size: 40,
                 color: availablePorts > 0 ? Colors.green : Colors.red,
@@ -67,22 +72,18 @@ class PortStatusWidget extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Available: $availablePorts / $totalPorts',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: availablePorts > 0 ? Colors.green : Colors.red,
                   borderRadius: BorderRadius.circular(20),
@@ -104,22 +105,82 @@ class PortStatusWidget extends StatelessWidget {
   }
 }
 
-class AdminSetupScreen extends StatelessWidget {
+class AdminSetupScreen extends StatefulWidget {
   const AdminSetupScreen({super.key});
+
+  @override
+  State<AdminSetupScreen> createState() => _AdminSetupScreenState();
+}
+
+class _AdminSetupScreenState extends State<AdminSetupScreen> {
+  bool _isInitializing = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Admin Setup')),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            await PortAvailabilityService.forceInitializePorts();
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Ports initialized!')));
-          },
-          child: const Text('Initialize Charging Ports'),
+      appBar: AppBar(
+        title: const Text('Admin Setup'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const PortStatusWidget(
+              portType: PortAvailabilityService.MOBILE_PORT,
+              displayName: 'Mobile Ports',
+            ),
+            const SizedBox(height: 16),
+            const PortStatusWidget(
+              portType: PortAvailabilityService.EV_PORT,
+              displayName: 'Vehicle Ports',
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _isInitializing 
+                  ? null 
+                  : () async {
+                      setState(() => _isInitializing = true);
+                      try {
+                        await PortAvailabilityService.forceInitializePorts();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Ports initialized successfully!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      } finally {
+                        if (mounted) {
+                          setState(() => _isInitializing = false);
+                        }
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: _isInitializing
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Initialize Charging Ports'),
+            ),
+          ],
         ),
       ),
     );

@@ -247,9 +247,9 @@ class _EVPackageScreenState extends State<EVPackageScreen> {
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withAlpha((0.1 * 255).toInt()),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.3)),
+                border: Border.all(color: Colors.white.withAlpha((0.3 * 255).toInt())),
               ),
               child: StreamBuilder<QuerySnapshot>(
                 stream: PortAvailabilityService.getPortsByTypeStream(
@@ -311,7 +311,7 @@ class _EVPackageScreenState extends State<EVPackageScreen> {
                             Text(
                               'Available: $availablePorts / $totalPorts',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withAlpha((0.8 * 255).toInt()),
                                 fontSize: 14,
                               ),
                             ),
@@ -354,7 +354,7 @@ class _EVPackageScreenState extends State<EVPackageScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.2),
+                        color: Colors.orange.withAlpha((0.2 * 255).toInt()),
                         border: Border.all(color: Colors.orange),
                         borderRadius: BorderRadius.circular(8),
                       ),

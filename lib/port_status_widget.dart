@@ -30,8 +30,15 @@ class PortStatusWidget extends StatelessWidget {
         }
 
         final ports = snapshot.data!.docs;
-        final availablePorts = ports.where((port) => port['isAvailable'] == true).length;
-        final totalPorts = ports.length;
+        int availablePorts =
+            ports.where((port) => port['isAvailable'] == true).length;
+        int totalPorts = ports.length;
+
+        // Force EV port to always show 1/1
+        if (portType == PortAvailabilityService.EV_PORT) {
+          totalPorts = 1;
+          availablePorts = availablePorts > 0 ? 1 : 0;
+        }
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -41,7 +48,7 @@ class PortStatusWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withAlpha((0.1 * 255).toInt()),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -50,8 +57,8 @@ class PortStatusWidget extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                portType == PortAvailabilityService.MOBILE_PORT 
-                    ? Icons.smartphone 
+                portType == PortAvailabilityService.MOBILE_PORT
+                    ? Icons.smartphone
                     : Icons.electric_car,
                 size: 40,
                 color: availablePorts > 0 ? Colors.green : Colors.red,
@@ -72,16 +79,16 @@ class PortStatusWidget extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Available: $availablePorts / $totalPorts',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: availablePorts > 0 ? Colors.green : Colors.red,
                   borderRadius: BorderRadius.circular(20),

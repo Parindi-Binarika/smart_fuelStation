@@ -14,7 +14,7 @@ class PortAvailabilityService {
     try {
       final portsRef = _firestore.collection(_portsCollection);
 
-      // Define all port configs
+      // Define all port configs (1 EV port, 2 mobile ports)
       final ports = [
         {
           'id': 'mobile_port_1',
@@ -27,7 +27,6 @@ class PortAvailabilityService {
           'name': 'Mobile Charging Port 2',
         },
         {'id': 'ev_port_1', 'type': EV_PORT, 'name': 'EV Charging Port 1'},
-        {'id': 'ev_port_2', 'type': EV_PORT, 'name': 'EV Charging Port 2'},
       ];
 
       for (final port in ports) {
@@ -71,7 +70,6 @@ class PortAvailabilityService {
           'name': 'Mobile Charging Port 2',
         },
         {'id': 'ev_port_1', 'type': EV_PORT, 'name': 'EV Charging Port 1'},
-        {'id': 'ev_port_2', 'type': EV_PORT, 'name': 'EV Charging Port 2'},
       ];
 
       for (final port in ports) {
